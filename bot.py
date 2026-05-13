@@ -52,13 +52,13 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-BOT_TOKEN = "8943121850:AAEFCIzgaPOzDrniIIKwFu6wpbcwEIYVybI"
+BOT_TOKEN = "8943121850:AAEijf6eIpsUDlltVV3SIwSinq1nFRIHxw4"
 ADMIN_IDS = [7500869913, 6458297811]
 ADMIN_CHAT_ID = str(ADMIN_IDS[0])
 OTP_GROUP_ID = -1003053441379
 OTP_GROUP_USERNAME = "afrixotpgc"
 
-ORANGE_EMAIL = "Jadenafrix10@gmail.com"
+ORANGE_EMAIL = "jadenafrix10@gmail.com"
 ORANGE_PASSWORD = "mahachi2007"
 
 LOGIN_URL = "https://www.orangecarrier.com/login"
@@ -436,8 +436,33 @@ def extract_otp_from_audio(audio_path):
     return None
 
 
+def find_chrome_binary():
+    candidates = [
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/snap/bin/chromium",
+        "/app/.apt/usr/bin/google-chrome",
+        "/opt/google/chrome/chrome",
+    ]
+    for path in candidates:
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            log.info(f"chrome binary found: {path}")
+            return path
+    import shutil
+    for name in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable"):
+        found = shutil.which(name)
+        if found:
+            log.info(f"chrome binary found via which: {found}")
+            return found
+    log.warning("no chrome binary found, letting seleniumbase auto-detect")
+    return None
+
+
 def setup_driver():
-    driver = Driver(
+    chrome_bin = find_chrome_binary()
+    kwargs = dict(
         browser="chrome",
         headless=True,
         undetectable=True,
@@ -447,6 +472,9 @@ def setup_driver():
         agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         page_load_strategy="eager",
     )
+    if chrome_bin:
+        kwargs["binary_location"] = chrome_bin
+    driver = Driver(**kwargs)
     driver.set_page_load_timeout(60)
     return driver
 
@@ -789,9 +817,16 @@ def scraper_loop():
 
 
 async def post_init(application: Application):
-    await application.bot.set_my_commands([
-        BotCommand("start", "open main menu"),
-    ])
+    try:
+        await application.bot.delete_webhook(drop_pending_updates=True)
+    except Exception:
+        pass
+    try:
+        await application.bot.set_my_commands([
+            BotCommand("start", "open main menu"),
+        ])
+    except Exception:
+        pass
     scraper_thread = threading.Thread(target=scraper_loop, daemon=True)
     scraper_thread.start()
     log.info("scraper thread launched")
@@ -813,8 +848,32 @@ def main():
     application.add_handler(CallbackQueryHandler(cb_admin_set_rent, pattern="^admin_set_rent$"))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     log.info("bot starting")
-    application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+        close_loop=False,
+    )
 
 
 if __name__ == "__main__":
+    health_thread = threading.Thread(target=start_health_server, daemon=True)
+    health_thread.start()
     main()
+
+
+def start_health_server():
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    port = int(os.environ.get("PORT", 10000))
+
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"ok")
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    log.info(f"health server listening on port {port}")
+    server.serve_forever()
