@@ -1,13 +1,16 @@
 [phases.setup]
 nixPkgs = [
+  "python311",
   "chromium",
   "chromedriver",
   "ffmpeg",
-  "python311",
 ]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+cmds = [
+  "pip install --upgrade pip",
+  "pip install -r requirements.txt",
+]
 
 [start]
 cmd = "python bot.py"
