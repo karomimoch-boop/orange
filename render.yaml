@@ -1,8 +1,9 @@
 services:
-  - type: web
+  - type: worker
     name: orangecarrier-bot
     runtime: python
-    buildCommand: "apt-get update && apt-get install -y chromium-driver ffmpeg && pip install -r requirements.txt"
+    pythonVersion: "3.11.9"
+    buildCommand: "apt-get update && apt-get install -y chromium-driver ffmpeg && pip install --upgrade pip && pip install -r requirements.txt"
     startCommand: "python bot.py"
-    plan: free
+    plan: starter
     autoDeploy: true
