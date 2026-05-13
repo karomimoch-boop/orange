@@ -1,8 +1,8 @@
 seleniumbase==4.29.7
-requests==2.31.0
+requests==2.32.3
 phonenumbers==8.13.29
-SpeechRecognition==3.10.1
+SpeechRecognition==3.10.4
 pydub==0.25.1
-Pillow==10.2.0
-pycountry
+Pillow==10.4.0
+pycountry==23.12.11
 python-telegram-bot==21.3
