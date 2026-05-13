@@ -855,11 +855,6 @@ def main():
     )
 
 
-if __name__ == "__main__":
-    health_thread = threading.Thread(target=start_health_server, daemon=True)
-    health_thread.start()
-    main()
-
 
 def start_health_server():
     from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -877,3 +872,10 @@ def start_health_server():
     server = HTTPServer(("0.0.0.0", port), HealthHandler)
     log.info(f"health server listening on port {port}")
     server.serve_forever()
+
+if __name__ == "__main__":
+    health_thread = threading.Thread(target=start_health_server, daemon=True)
+    health_thread.start()
+    main()
+
+
